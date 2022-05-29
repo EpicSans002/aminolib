@@ -6,7 +6,7 @@
   <br>
   <a href="https://github.com/EpicSans002/aminolib"><img src="https://cdn.discordapp.com/icons/715911730550800514/8b577d0f9d38614422601a71e91b866d.png?size=512" alt="Aminolib" width="200"></a>
   <br>
-  Amino.py
+  Aminolib
   <br>
 </h1>
 
