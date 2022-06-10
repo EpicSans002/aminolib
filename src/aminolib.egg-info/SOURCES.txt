@@ -1,0 +1,13 @@
+LICENSE
+README.md
+pyproject.toml
+setup.py
+src/aminolib/__init__.py
+src/aminolib/aminolib.py
+src/aminolib/client.py
+src/aminolib/objects.py
+src/aminolib.egg-info/PKG-INFO
+src/aminolib.egg-info/SOURCES.txt
+src/aminolib.egg-info/dependency_links.txt
+src/aminolib.egg-info/requires.txt
+src/aminolib.egg-info/top_level.txt
