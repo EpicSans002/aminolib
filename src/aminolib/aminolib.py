@@ -12,8 +12,9 @@ import threading
 import datetime
 import binascii
 import uuid
-from aminolib import objects
-print("Discord\thttps://discord.gg/BnAFAPsc\naminolib.py 1.1.1")
+from .lib import exc
+from .lib import objects
+print("Discord\thttps://discord.gg/BnAFAPsc\naminolib.py 0.0.5")
 class Client:
 	def __init__(self, device: str=None):
 		if device is not None:self.device = device
@@ -73,7 +74,8 @@ class Client:
 		data = json.dumps({"email": email, "secret": f"0 {password}", "deviceID": self.device, "clientType": 100, "action": "normal", "timestamp": (int(time.time() * 1000))})
 		self.headers["NDC-MSG-SIG"] = self.sig(data = data)
 		req = requests.post(f"{self.api}/g/s/auth/login", data = data, headers = self.headers)
-		if req.status_code!= 200:print(req.json()["api:message"])
+		if req.status_code!= 200:
+			return exc.CheckExceptions(req.json())
 		try:self.sid, self.userId = req.json()["sid"], req.json()["account"]["uid"]
 		except:pass
 	
@@ -85,27 +87,42 @@ class Client:
 		data = json.dumps({"timestamp" : int(time.time()*1000)})
 		self.headers["NDC-MSG-SIG"]=self.sig(data=data)
 		req = requests.post(f"{self.api}/x{comId}/s/community/join?sid={self.sid}", data = data, headers = self.headers)
-		if req.status_code!=200:print(req.json()["api:message"])
+		if req.status_code!=200:
+			return exc.CheckExceptions(req.json())
 		
 	def check_In(self, comId: int):
 		data = json.dumps({"timezone": self.timezone(),"timestamp": int(time.time() *1000)})
 		self.headers["NDC-MSG-SIG"] = self.sig(data = data)
 		req = requests.post(f"{self.api}/x{comId}/s/check-in?sid={self.sid}",data=data, headers=self.headers)
-		if req.status_code!=200:print(req.json()["api:message"])
+		if req.status_code!=200:
+			return exc.CheckExceptions(req.json())
 		
 	def check_lottery(self, comId: int):
 		data = json.dumps({"timezone": self.timezone(), "timestamp": int(time.time() * 1000)})
 		self.headers["NDC-MSG-SIG"] = self.sig(data = data)
 		req = requests.post(f"{self.api}/x{comId}/s/check-in/lottery?sid={self.sid}", data = data, headers = self.headers)
-		if req.status_code!=200:print(req.json()["api:message"])
+		if req.status_code!=200:
+			return exc.CheckExceptions(req.json())
 		
 	def get_user_info(self, comId: int=None, userId: str=None):
 		if comId is None:
 			req = requests.get(f"{self.api}/g/s/user-profile/{userId}",headers=self.headers)
 		if comId is not None:
 			req = requests.get(f"{self.api}/x{comId}/s/user-profile/{userId}",headers=self.headers)
-		if req.status_code!=200:print(req.json()["api:message"])
+		if req.status_code!=200:
+			return exc.CheckExceptions(req.json())
 		return req.json()
+	
+	def get_blog_info(self,comId:int,blogId:int):
+		req=requests.get(f"{self.api}/x{comId}/s/blog/{blogId}",headers=self.headers)
+		return req.json()
+	
+	def vote(self,blogId:str,optionId:str):
+		data = json.dumps({"value": 1, "timestamp": int(time.time() * 1000)})
+		self.headers["NDC-MSG-SIG"]=self.sig(data=data)
+		req = requests.post(f"{self.api}/x{comId}/s/blog/{blogId}/poll/option/{optionId}/vote?sid={self.sid}",headers=self.headers,data=data)
+		if req.status_code!=200:
+			return exc.CheckExceptions(req.json())
 		
 	def get_wallet(self):
 		req= requests.get(f"{self.api}/g/s/wallet?sid={self.sid}", headers=self.headers).json()
@@ -117,12 +134,14 @@ class Client:
 		if timeslist: data["userActiveTimeChunkList"] = timers
 		self.headers["NDC-MSG-SIG"] = self.sig(data = data)
 		req = requests.post(f"{self.api}/x{comId}/s/community/stats/user-active-time?sid={self.sid}", data = data, headers = self.headers)
-		if req.status_code!=200:print(req.json()["api:message"])
+		if req.status_code!=200:
+			return exc.CheckExceptions(req.json())
 		
 	def join_chat(self, comId : int = None, chatId: str = None):
 		if comId is not None:req = requests.post(f"{self.api}/x{comId}/s/chat/thread/{chatId}/member/{self.userId}?sid={self.sid}",headers=self.headers)
 		if comId is None:req = requests.post(f"{self.api}/g/s/chat/thread/{chatId}/member/{self.userId}?sid={self.sid}", headers=self.headers)
-		if req.status_code!=200:print(req.json()["api:message"])
+		if req.status_code!=200:
+			return exc.CheckExceptions(req.json())
 		
 	def transactionId(self):
 		transactionId = str(uuid.UUID(binascii.hexlify(os.urandom(16)).decode("ascii")))
@@ -132,30 +151,35 @@ class Client:
 		data = json.dumps({"coins": coin,"tippingContext": {"transactionId": self.transactionId()},"timestamp": int(time.time() * 1000)})
 		self.headers["NDC-MSG-SIG"] = self.sig(data = data)
 		req = requests.post(f"{self.api}/x{comId}/s/blog/{blogId}/tipping?sid={self.sid}", headers=self.headers, data=data)
-		if req.status_code!=200:print(req.json()["api:message"])
+		if req.status_code!=200:
+			return exc.CheckExceptions(req.json())
 		
 	def follow(self, comId : int=None, userId: str=None):
 		if comId is None:
 			req = requests.post(f"{self.api}/g/s/user-profile/{userId}/member?sid={self.sid}", headers=self.headers)
 		if comId is not None:
 			req = requests.post(f"{self.api}/x{comId}/s/user-profile/{userId}/member?sid={self.sid}",headers = self.headers)
-		if req.status_code!=200:print(req.json()["api:message"])
+		if req.status_code!=200:
+			return exc.CheckExceptions(req.json())
 		
 	def unfollow(self, comId: int = None, userId: str = None):
 		if comId is None:
-			req = requests.post(f"{self.api}/g/s/user-profile/{userId}/member/{self.userId}?sid={self.sid}",headers=self.headers)
+			req = requests.delete(f"{self.api}/g/s/user-profile/{userId}/member/{self.userId}?sid={self.sid}",headers=self.headers)
 		if comId is not None:
 			req = requests.post(f"{self.api}/x{comId}/s/user-profile/{userId}/member/{self.userId}?sid={self.sid}",headers=self.headers)
-		if req.status_code!=200:print(req.json()["api:message"])
+		if req.status_code!=200:
+			return exc.CheckExceptions(req.json())
 		
 	def get_all_users(self, comId: int,start:int=0,size:int=25):
 		req = requests.get(f"{self.api}/x{comId}/s/user-profile?type=recent&start={start}&size={size}",headers = self.headers)
-		if req.status_code!=200:print(req.json()["api:message"])
+		if req.status_code!=200:
+			return exc.CheckExceptions(req.json())
 		return objects.userProfileList(req.json())
 		
 	def get_online_users(self,comId:int = None,start:int=0, size:int=25):
 		req = requests.get(f"{self.api}/x{comId}/s/live-layer?topic=ndtopic:x{comId}:online-members&start={start}&size={size}",headers=self.headers)
-		if req.status_code!=200:print(req.json()["api:message"])
+		if req.status_code!=200:
+			return exc.CheckExceptions(req.json())
 		return objects.userProfileList(req.json())
 		
 	def subscribe(self, comId: int=None, userId: str=None, Renew: str= False):
@@ -163,12 +187,15 @@ class Client:
 		data = json.dumps({"paymentContext": {"transactionId":transactionId,"isAutoRenew": Renew},"timestamp": int(time.time()*1000)})
 		self.headers["NDC-MSG-SIG"]=self.sig(data)
 		req = requests.post(f"{self.api}/x{comId}/s/influencer/{userId}/subscribe?sid={self.sid}",headers=self.headers,data=data)
-		if req.status_code!=200:print(req.json()["api:message"])
+		if req.status_code!=200:
+			return exc.CheckExceptions(req.json())
 		return req.json()
 	
 	def online(self, comId: int=None, status:int=None):
 		data = json.dumps({"onlineStatus": status,"duration": 86400,"timestamp":int(time.time()*1000)})
 		self.headers["NDC-MSG-SIG"]=self.sig(data)
 		req = requests.post(f"{self.api}/x{comId}/s/user-profile/{self.userId}/online-status?sid={self.sid}",data=data,headers=self.headers)
-		if req.status_code!=200:print(req.json()["api:message"])
+		if req.status_code!=200:
+			return exc.CheckExceptions(req.json())
 		return req.json()
+	
